@@ -264,7 +264,7 @@
             }
 
             // Return the view to its normal state
-            _view.destroyInstream(_provider.audioMode());
+            _view.destroyInstream(_provider.isAudioFile());
             _fakemodel = null;
         };
 
@@ -318,7 +318,7 @@
 
         function _setupProvider() {
             //if (!_provider) {
-            _provider = new html5.video(_video, 'instream');
+            _provider = new html5.Video(_video, 'instream');
             _provider.addGlobalListener(_forward);
             _provider.addEventListener(_events.JWPLAYER_MEDIA_META, _metaHandler);
             _provider.addEventListener(_events.JWPLAYER_MEDIA_COMPLETE, _completeHandler);

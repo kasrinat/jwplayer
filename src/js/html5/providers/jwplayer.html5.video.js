@@ -3,16 +3,19 @@
     var utils = jwplayer.utils,
         events = jwplayer.events,
         states = events.state,
+        defaultProvider = jwplayer.html5.provider,
+        _isIE = utils.isMSIE(),
+        _isMobile = utils.isMobile(),
+        _isSafari = utils.isSafari(),
+        _isAndroid = utils.isAndroidNative(),
+        _isIOS7 = utils.isIOS(7);
 
-        TRUE = true,
-        FALSE = false;
+    var VideoProvider = function(_videotag, _name) {
 
-    /** HTML5 video class * */
-    jwplayer.html5.video = function(_videotag, _name) {
         _name = _name || '';
-        var _isIE = utils.isMSIE(),
-            _isMobile = utils.isMobile(),
-            _isSafari = utils.isSafari(),
+
+        var _this = utils.extend(this, new events.eventdispatcher(_name)),
+
             _mediaEvents = {
                 abort: _generalHandler,
                 canplay: _canPlayHandler,
@@ -49,13 +52,13 @@
             // Current position
             _position,
             // Whether seeking is ready yet
-            _canSeek = FALSE,
+            _canSeek = false,
             // Whether we have sent out the BUFFER_FULL event
             _bufferFull,
             // If we should seek on canplay
             _delayedSeek = 0,
             // If we're currently dragging the seek bar
-            _dragging = FALSE,
+            _dragging = false,
             // Current media state
             _state = states.IDLE,
             // Save the volume state before muting
@@ -65,29 +68,17 @@
             // Last sent buffer amount
             _bufferPercent = -1,
             // Whether or not we're listening to video tag events
-            _attached = FALSE,
+            _attached = false,
             // Quality levels
             _levels,
             // Current quality level index
             _currentQuality = -1,
-            // Whether or not we're on an Android device and Not Chrome
-            _isAndroid = utils.isAndroidNative(),
-            // Whether or not we're on an iOS 7 device
-            _isIOS7 = utils.isIOS(7),
-
-            //tracks for ios
-            _tracks = [],
-            _usedTrack = 0,
-
-            //selected track
-            _tracksOnce = false,
 
             // post roll support
-            _beforecompleted = FALSE,
+            _beforecompleted = false,
 
-            _fullscreenState = null,
+            _fullscreenState = null;
 
-            _this = utils.extend(this, new events.eventdispatcher(_name));
 
         // Constructor
         function _init() {
@@ -99,19 +90,19 @@
 
             // Workaround for a Safari bug where video disappears on switch to fullscreen
             if (!_isIOS7) {
-                _videotag.controls = TRUE;
-                _videotag.controls = FALSE;
+                _videotag.controls = true;
+                _videotag.controls = false;
             }
 
             // Enable AirPlay
             _videotag.setAttribute('x-webkit-airplay', 'allow');
 
-            _attached = TRUE;
+            _attached = true;
         }
 
         function _setupListeners() {
             utils.foreach(_mediaEvents, function(evt, evtCallback) {
-                _videotag.addEventListener(evt, evtCallback, FALSE);
+                _videotag.addEventListener(evt, evtCallback, false);
             });
         }
 
@@ -147,7 +138,7 @@
             if (!_attached) { return; }
             if (_state === states.PLAYING && !_dragging) {
                 _position = _round(_videotag.currentTime);
-                _canSeek = TRUE;
+                _canSeek = true;
                 _sendEvent(events.JWPLAYER_MEDIA_TIME, {
                     position: _position,
                     duration: _duration
@@ -160,7 +151,7 @@
         }
 
         function _round(number) {
-            return Math.floor(number * 10) / 10;
+            return Math.floor(number*10) / 10;
         }
 
         function sendMetaEvent() {
@@ -179,14 +170,14 @@
             }
 
             if (!_canSeek) {
-                _canSeek = TRUE;
+                _canSeek = true;
                 _sendBufferFull();
             }
             if (evt.type === 'loadedmetadata') {
                 //fixes Chrome bug where it doesn't like being muted before video is loaded
                 if (_videotag.muted) {
-                    _videotag.muted = FALSE;
-                    _videotag.muted = TRUE;
+                    _videotag.muted = false;
+                    _videotag.muted = true;
                 }
                 sendMetaEvent();
             }
@@ -212,7 +203,7 @@
 
         function _sendBufferFull() {
             if (!_bufferFull) {
-                _bufferFull = TRUE;
+                _bufferFull = true;
                 _sendEvent(events.JWPLAYER_MEDIA_BUFFER_FULL);
             }
         }
@@ -296,7 +287,7 @@
             return 0;
         }
 
-        _this.load = function(item) {
+        this.load = function(item) {
             if (!_attached) {
                 return;
             }
@@ -344,8 +335,8 @@
 
             var sourceChanged = (_videotag.src !== _source.file);
             if (sourceChanged || _forceVideoLoad()) {
-                _canSeek = FALSE;
-                _bufferFull = FALSE;
+                _canSeek = false;
+                _bufferFull = false;
                 _duration = duration ? duration : -1;
                 _videotag.src = _source.file;
                 _videotag.load();
@@ -378,7 +369,7 @@
             }
         }
 
-        _this.stop = function() {
+        this.stop = function() {
             if (!_attached) { return; }
             _videotag.removeAttribute('src');
             if (!_isIE) {
@@ -390,24 +381,24 @@
         };
 
 
-        _this.destroy = function() {
+        this.destroy = function() {
             clearInterval(_bufferInterval);
         };
 
-        _this.play = function() {
+        this.play = function() {
             if (_attached && !_dragging) {
                 _videotag.play();
             }
         };
 
-        var _pause = _this.pause = function() {
+        var _pause = this.pause = function() {
             if (_attached) {
                 _videotag.pause();
                 _setState(states.PAUSED);
             }
         };
 
-        _this.seekDrag = function(state) {
+        this.seekDrag = function(state) {
             if (!_attached) {
                 return;
             }
@@ -419,7 +410,7 @@
             }
         };
 
-        var _seek = _this.seek = function(seekPos) {
+        var _seek = this.seek = function(seekPos) {
             if (!_attached) {
                 return;
             }
@@ -453,7 +444,7 @@
             }
         }
 
-        var _volume = _this.volume = function(vol) {
+        var _volume = this.volume = function(vol) {
             if (utils.exists(vol)) {
                 _videotag.volume = Math.min(Math.max(0, vol / 100), 1);
                 _lastVolume = _videotag.volume * 100;
@@ -469,15 +460,15 @@
             });
         }
 
-        _this.mute = function(state) {
+        this.mute = function(state) {
             if (!utils.exists(state)) { state = !_videotag.muted; }
 
             if (state) {
                 _lastVolume = _videotag.volume * 100;
-                _videotag.muted = TRUE;
+                _videotag.muted = true;
             } else {
                 _volume(_lastVolume);
-                _videotag.muted = FALSE;
+                _videotag.muted = false;
             }
         };
 
@@ -532,13 +523,13 @@
         function _complete() {
             if (_state !== states.IDLE) {
                 _currentQuality = -1;
-                _beforecompleted = TRUE;
+                _beforecompleted = true;
                 _sendEvent(events.JWPLAYER_MEDIA_BEFORECOMPLETE);
 
 
                 if (_attached) {
                     _setState(states.IDLE);
-                    _beforecompleted = FALSE;
+                    _beforecompleted = false;
                     _sendEvent(events.JWPLAYER_MEDIA_COMPLETE);
                 }
             }
@@ -549,7 +540,7 @@
             _sendFullscreen(e);
             // show controls on begin fullscreen so that they are disabled properly at end
             if (utils.isIOS()) {
-                _videotag.controls = FALSE;
+                _videotag.controls = false;
             }
         }
 
@@ -557,7 +548,7 @@
             _fullscreenState = false;
             _sendFullscreen(e);
             if (utils.isIOS()) {
-                _videotag.controls = FALSE;
+                _videotag.controls = false;
             }
         }
 
@@ -568,50 +559,6 @@
             });
         }
 
-        _this.addCaptions = function(tracks) {
-            /*jshint maxlen:125*/
-            if (utils.isIOS() && _videotag.addTextTrack && !_tracksOnce) {
-                var TextTrackCue = window.TextTrackCue;
-                utils.foreach(tracks, function(index, elem) {
-                    if (elem.data) {
-                        _usedTrack = index;
-                        var track = _videotag.addTextTrack(elem.kind, elem.label);
-                        utils.foreach(elem.data, function(ndx, element) {
-                            if (ndx % 2 === 1) {
-                                var c = new TextTrackCue(element.begin, elem.data[parseInt(ndx,10) + 1].begin, element.text);
-                                track.addCue(c);
-                            }
-                        });
-                        _tracks.push(track);
-                        track.mode = 'hidden';
-                    }
-                });
-            }
-        };
-
-        _this.resetCaptions = function() {
-        };
-
-
-        _this.fsCaptions = function(state) { //, curr) {
-            if (utils.isIOS() && _videotag.addTextTrack && !_tracksOnce) {
-                var ret = null;
-
-                utils.foreach(_tracks, function(index, elem) {
-                    if (!state && elem.mode === 'showing') {
-                        ret = parseInt(index,10);
-                    }
-                    if (!state) {
-                        elem.mode = 'hidden';
-                    }
-                });
-
-                if (!state) {
-                    return ret;
-                }
-            }
-        };
-
         this.checkComplete = function() {
             return _beforecompleted;
         };
@@ -619,37 +566,37 @@
         /**
          * Return the video tag and stop listening to events
          */
-        _this.detachMedia = function() {
-            _attached = FALSE;
-            // _canSeek = FALSE;
+        this.detachMedia = function() {
+            _attached = false;
+            // _canSeek = false;
             return _videotag;
         };
 
         /**
          * Begin listening to events again
          */
-        _this.attachMedia = function(seekable) {
-            _attached = TRUE;
+        this.attachMedia = function(seekable) {
+            _attached = true;
             if (!seekable) {
-                _canSeek = FALSE;
+                _canSeek = false;
             }
             if (_beforecompleted) {
                 _setState(states.IDLE);
                 _sendEvent(events.JWPLAYER_MEDIA_COMPLETE);
-                _beforecompleted = FALSE;
+                _beforecompleted = false;
             }
         };
 
-        _this.setContainer = function(element) {
+        this.setContainer = function(element) {
             _container = element;
             element.appendChild(_videotag);
         };
 
-        _this.getContainer = function() {
+        this.getContainer = function() {
             return _container;
         };
 
-        _this.remove = function() {
+        this.remove = function() {
             // stop video silently
             if (_videotag) {
                 _videotag.removeAttribute('src');
@@ -665,7 +612,7 @@
             }
         };
 
-        _this.setVisibility = function(state) {
+        this.setVisibility = function(state) {
             state = !!state;
             if (state || _isAndroid) {
                 // Changing visibility to hidden on Android < 4.2 causes 
@@ -684,22 +631,22 @@
             }
         };
 
-        _this.resize = function(width, height, stretching) {
+        this.resize = function(width, height, stretching) {
             return utils.stretch(stretching,
                 _videotag,
                 width, height,
                 _videotag.videoWidth, _videotag.videoHeight);
         };
 
-        _this.setControls = function(state) {
+        this.setControls = function(state) {
             _videotag.controls = !!state;
         };
 
-        _this.supportsFullscreen = function() {
+        this.supportsFullscreen = function() {
             return true;
         };
 
-        _this.setFullScreen = function(state) {
+        this.setFullScreen = function(state) {
             state = !!state;
 
             // This implementation if for iOS and Android WebKit only
@@ -730,19 +677,19 @@
             return state;
         };
 
-        _this.getFullScreen = function() {
+        this.getFullScreen = function() {
             return _fullscreenState || _videotag.webkitDisplayingFullscreen;
         };
 
-        _this.audioMode = function() {
+        this.isAudioFile = function() {
             if (!_levels) {
-                return FALSE;
+                return false;
             }
             var type = _levels[0].type;
             return (type === 'oga' || type === 'aac' || type === 'mp3' || type === 'vorbis');
         };
 
-        _this.setCurrentQuality = function(quality) {
+        this.setCurrentQuality = function(quality) {
             if (_currentQuality === quality) {
                 return;
             }
@@ -765,15 +712,19 @@
             }
         };
 
-        _this.getCurrentQuality = function() {
+        this.getCurrentQuality = function() {
             return _currentQuality;
         };
 
-        _this.getQualityLevels = function() {
+        this.getQualityLevels = function() {
             return _getPublicLevels(_levels);
         };
 
         _init();
     };
+
+    VideoProvider.prototype = defaultProvider;
+
+    jwplayer.html5.Video = VideoProvider;
 
 })(jwplayer);

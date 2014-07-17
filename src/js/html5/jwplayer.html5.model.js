@@ -15,7 +15,7 @@
             _video,
             // Providers
             _providers = {
-                html5: _defaultProvider || new html5.video(null, 'default')
+                html5: _defaultProvider || new html5.Video(null, 'default')
             },
             // Saved settings
             _cookies = utils.getCookies(),
@@ -136,7 +136,7 @@
 
         _model.setFullscreen = function(state) {
             state = !!state;
-            if (state != _model.fullscreen) {
+            if (state !== _model.fullscreen) {
                 _model.fullscreen = state;
                 _model.sendEvent(events.JWPLAYER_FULLSCREEN, {
                     fullscreen: state
@@ -163,10 +163,10 @@
         _model.setItem = function(index) {
             var newItem;
             var repeat = false;
-            if (index == _model.playlist.length || index < -1) {
+            if (index === _model.playlist.length || index < -1) {
                 newItem = 0;
                 repeat = true;
-            } else if (index == -1 || index > _model.playlist.length) {
+            } else if (index === -1 || index > _model.playlist.length) {
                 newItem = _model.playlist.length - 1;
             } else {
                 newItem = index;
@@ -191,7 +191,7 @@
                             if (provider) {
                                 provider.destroy();
                             }
-                            provider = _providers.youtube = new html5.youtube(_model.id);
+                            provider = _providers.youtube = new html5.Youtube(_model.id);
                         }
                     }
                 }
@@ -204,7 +204,9 @@
         };
 
         _model.setVolume = function(newVol) {
-            if (_model.mute && newVol > 0) _model.setMute(false);
+            if (_model.mute && newVol > 0) {
+                _model.setMute(false);
+            }
             newVol = Math.round(newVol);
             if (!_model.mute) {
                 utils.saveCookie('volume', newVol);
@@ -217,7 +219,9 @@
         };
 
         _model.setMute = function(state) {
-            if (!utils.exists(state)) state = !_model.mute;
+            if (!utils.exists(state)) {
+                state = !_model.mute;
+            }
             utils.saveCookie('mute', state);
             _videoEventHandler({
                 type: events.JWPLAYER_MEDIA_MUTE,
