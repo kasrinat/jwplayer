@@ -131,21 +131,14 @@
             }
         }
 
-        // function _getYoutubePlayerStateString() {
-        // 	var state = _ytPlayer.getPlayerState();
-        // 	var states = _youtube.PlayerState;
-        // 	for (var name in states) {
-        // 		if (states[name] === state) {
-        // 			return name;
-        // 		}
-        // 	}
-        // 	return 'unknown';
-        // }
 
+        function _round(number) {
+            return Math.round(number*10)/10;
+        }
         function _timeUpdateHandler() {
             _bufferUpdate();
             _dispatchEvent(events.JWPLAYER_MEDIA_TIME, {
-                position: (_ytPlayer.getCurrentTime() * 10 | 0) / 10,
+                position: _round(_ytPlayer.getCurrentTime()),
                 duration: _ytPlayer.getDuration()
             });
         }
@@ -165,7 +158,7 @@
         }
 
         function _ended() {
-            if (_state != states.IDLE) {
+            if (_state !== states.IDLE) {
                 _beforecompleted = true;
                 _dispatchEvent(events.JWPLAYER_MEDIA_BEFORECOMPLETE);
                 _setState(states.IDLE);
@@ -240,7 +233,7 @@
 
         function _onYoutubeStateChange(event) {
             var youtubeStates = _youtube.PlayerState;
-            // console.log(_playerId, 'Youtube state change', event, 'state', _getYoutubePlayerStateString(), 'data', _ytPlayer.getVideoData());
+
             switch (event.data) {
 
                 case youtubeStates.UNSTARTED: // -1: //unstarted
@@ -421,7 +414,6 @@
             var currentVideoId = _ytPlayer.getVideoData().video_id;
 
             if (currentVideoId !== videoId) {
-                // console.log(_playerId, 'YT loadVideoById', videoId, 'current', currentVideoId, 'state', _getYoutubePlayerStateString(), 'data', _ytPlayer.getVideoData());
                 // An exception is thrown by the iframe_api - but the call works
                 // it's trying to access an element of the controls which is not present
                 // because we disabled control in the setup
@@ -477,21 +469,20 @@
             if (_ytPlayer.seekTo) {
                 _ytPlayer.seekTo(position);
             }
-
-            // _sendEvent(events.JWPLAYER_MEDIA_SEEK, {
-            // 	position: _position,
-            // 	offset: seekPos
-            // });
         };
 
         _this.volume = function(volume) {
-            if (!_ytPlayer) return;
+            if (!_ytPlayer) {
+                return;
+            }
             // TODO: proper volume (controller should handle logic)
             _ytPlayer.setVolume(volume);
         };
 
         _this.mute = function(mute) {
-            if (!_ytPlayer) return;
+            if (!_ytPlayer) {
+                return;
+            }
             // TODO: proper mute (controller should handle logic)
             if (mute) {
                 _ytPlayer.setVolume(0);
@@ -573,7 +564,9 @@
         };
 
         _this.getCurrentQuality = function() {
-            if (!_ytPlayer) return;
+            if (!_ytPlayer) {
+                return;
+            }
             if (_ytPlayer.getAvailableQualityLevels) {
                 var ytQuality = _ytPlayer.getPlaybackQuality();
                 var ytLevels = _ytPlayer.getAvailableQualityLevels();
@@ -583,7 +576,9 @@
         };
 
         _this.getQualityLevels = function() {
-            if (!_ytPlayer) return;
+            if (!_ytPlayer) {
+                return;
+            }
             var levels = [];
             if (_ytPlayer.getAvailableQualityLevels) {
                 var ytLevels = _ytPlayer.getAvailableQualityLevels();
@@ -597,7 +592,9 @@
         };
 
         _this.setCurrentQuality = function(quality) {
-            if (!_ytPlayer) return;
+            if (!_ytPlayer) {
+                return;
+            }
             if (_ytPlayer.getAvailableQualityLevels) {
                 var ytLevels = _ytPlayer.getAvailableQualityLevels();
                 if (ytLevels.length) {

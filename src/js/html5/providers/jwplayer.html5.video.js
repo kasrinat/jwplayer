@@ -1,9 +1,3 @@
-/**
- * Video tag stuff
- *
- * @author pablo
- * @version 6.0
- */
 (function(jwplayer) {
 
     var utils = jwplayer.utils,
@@ -98,7 +92,7 @@
         // Constructor
         function _init() {
             if (!_videotag) {
-                _videotag = document.createElement("video");
+                _videotag = document.createElement('video');
             }
 
             _setupListeners();
@@ -110,7 +104,7 @@
             }
 
             // Enable AirPlay
-            _videotag.setAttribute("x-webkit-airplay", "allow");
+            _videotag.setAttribute('x-webkit-airplay', 'allow');
 
             _attached = TRUE;
         }
@@ -129,14 +123,14 @@
 
 
         function _generalHandler() { //evt) {
-            //if (evt) utils.log("%s %o (%s,%s)", evt.type, evt);
+            //if (evt) utils.log('%s %o (%s,%s)', evt.type, evt);
         }
 
         function _durationUpdateHandler(evt) {
             _generalHandler(evt);
-            if (!_attached) return;
+            if (!_attached) { return; }
             var newDuration = _round(_videotag.duration);
-            if (_duration != newDuration) {
+            if (_duration !== newDuration) {
                 _duration = newDuration;
             }
             if (_isAndroid && _delayedSeek > 0 && newDuration > _delayedSeek) {
@@ -150,8 +144,8 @@
             _progressHandler(evt);
 
 
-            if (!_attached) return;
-            if (_state == states.PLAYING && !_dragging) {
+            if (!_attached) { return; }
+            if (_state === states.PLAYING && !_dragging) {
                 _position = _round(_videotag.currentTime);
                 _canSeek = TRUE;
                 _sendEvent(events.JWPLAYER_MEDIA_TIME, {
@@ -166,7 +160,7 @@
         }
 
         function _round(number) {
-            return (number * 10 | 0) / 10;
+            return Math.floor(number * 10) / 10;
         }
 
         function sendMetaEvent() {
@@ -179,12 +173,16 @@
 
         function _canPlayHandler(evt) {
             _generalHandler(evt);
-            if (!_attached) return;
+
+            if (!_attached) {
+                return;
+            }
+
             if (!_canSeek) {
                 _canSeek = TRUE;
                 _sendBufferFull();
             }
-            if (evt.type == "loadedmetadata") {
+            if (evt.type === 'loadedmetadata') {
                 //fixes Chrome bug where it doesn't like being muted before video is loaded
                 if (_videotag.muted) {
                     _videotag.muted = FALSE;
@@ -198,13 +196,17 @@
             _generalHandler(evt);
             if (_canSeek && _delayedSeek > 0 && !_isAndroid) {
                 // Need to set a brief timeout before executing delayed seek; IE9 stalls otherwise.
-                if (_isIE) setTimeout(function() {
-                    if (_delayedSeek > 0) {
-                        _seek(_delayedSeek);
-                    }
-                }, 200);
+                if (_isIE) {
+                    setTimeout(function() {
+                        if (_delayedSeek > 0) {
+                            _seek(_delayedSeek);
+                        }
+                    }, 200);
+                }
                 // Otherwise call it immediately
-                else _seek(_delayedSeek);
+                else {
+                    _seek(_delayedSeek);
+                }
             }
         }
 
@@ -217,17 +219,19 @@
 
         function _playHandler(evt) {
             _generalHandler(evt);
-            if (!_attached || _dragging) return;
+            if (!_attached || _dragging) {
+                return;
+            }
 
             if (_videotag.paused) {
-                if (_videotag.currentTime == _videotag.duration && _videotag.duration > 3) {
+                if (_videotag.currentTime === _videotag.duration && _videotag.duration > 3) {
                     // Needed as of Chrome 20
                     //_complete();
                 } else {
                     _pause();
                 }
             } else {
-                if (utils.isFF() && evt.type == "play" && _state == states.BUFFERING) {
+                if (utils.isFF() && evt.type === 'play' && _state === states.BUFFERING) {
                     // In FF, we get an extra "play" event on startup - we need to wait for "playing",
                     // which is also handled by this function
                     return;
@@ -240,24 +244,28 @@
 
         function _bufferStateHandler(evt) {
             _generalHandler(evt);
-            if (!_attached) return;
+            if (!_attached) {
+                return;
+            }
             if (!_dragging) {
                 _setState(states.BUFFERING);
             }
         }
 
         function _errorHandler() { //evt) {
-            if (!_attached) return;
-            utils.log("Error playing media: %o", _videotag.error);
+            if (!_attached) {
+                return;
+            }
+            utils.log('Error playing media: %o', _videotag.error);
             _sendEvent(events.JWPLAYER_MEDIA_ERROR, {
-                message: "Error loading media: File could not be played"
+                message: 'Error loading media: File could not be played'
             });
             _setState(states.IDLE);
         }
 
         function _getPublicLevels(levels) {
             var publicLevels;
-            if (utils.typeOf(levels) == "array" && levels.length > 0) {
+            if (utils.typeOf(levels) === 'array' && levels.length > 0) {
                 publicLevels = [];
                 for (var i = 0; i < levels.length; i++) {
                     var level = levels[i],
@@ -281,12 +289,17 @@
         }
 
         function _levelLabel(level) {
-            if (level.label) return level.label;
-            else return 0;
+            if (level.label) {
+                return level.label;
+            }
+
+            return 0;
         }
 
         _this.load = function(item) {
-            if (!_attached) return;
+            if (!_attached) {
+                return;
+            }
 
             _levels = item.sources;
             _pickInitialQuality();
@@ -303,10 +316,10 @@
                 var cookies = utils.getCookies(),
                     label = cookies.qualityLabel;
                 for (var i = 0; i < _levels.length; i++) {
-                    if (_levels[i]["default"]) {
+                    if (_levels[i]['default']) {
                         _currentQuality = i;
                     }
-                    if (label && _levels[i].label == label) {
+                    if (label && _levels[i].label === label) {
                         _currentQuality = i;
                         break;
                     }
@@ -366,8 +379,8 @@
         }
 
         _this.stop = function() {
-            if (!_attached) return;
-            _videotag.removeAttribute("src");
+            if (!_attached) { return; }
+            _videotag.removeAttribute('src');
             if (!_isIE) {
                 _videotag.load();
             }
@@ -395,7 +408,9 @@
         };
 
         _this.seekDrag = function(state) {
-            if (!_attached) return;
+            if (!_attached) {
+                return;
+            }
             _dragging = state;
             if (state) {
                 _videotag.pause();
@@ -405,7 +420,9 @@
         };
 
         var _seek = _this.seek = function(seekPos) {
-            if (!_attached) return;
+            if (!_attached) {
+                return;
+            }
 
             if (!_dragging && _delayedSeek === 0) {
                 _sendEvent(events.JWPLAYER_MEDIA_SEEK, {
@@ -431,7 +448,7 @@
 
         function _sendSeekEvent(evt) {
             _generalHandler(evt);
-            if (!_dragging && _state != states.PAUSED) {
+            if (!_dragging && _state !== states.PAUSED) {
                 _setState(states.PLAYING);
             }
         }
@@ -453,7 +470,8 @@
         }
 
         _this.mute = function(state) {
-            if (!utils.exists(state)) state = !_videotag.muted;
+            if (!utils.exists(state)) { state = !_videotag.muted; }
+
             if (state) {
                 _lastVolume = _videotag.volume * 100;
                 _videotag.muted = TRUE;
@@ -466,14 +484,14 @@
         /** Set the current player state * */
         function _setState(newstate) {
             // Handles a FF 3.5 issue
-            if (newstate == states.PAUSED && _state == states.IDLE) {
+            if (newstate === states.PAUSED && _state === states.IDLE) {
                 return;
             }
 
             // Ignore state changes while dragging the seekbar
-            if (_dragging) return;
+            if (_dragging) { return; }
 
-            if (_state != newstate) {
+            if (_state !== newstate) {
                 var oldstate = _state;
                 _state = newstate;
                 _sendEvent(events.JWPLAYER_PLAYER_STATE, {
@@ -484,9 +502,9 @@
         }
 
         function _sendBufferUpdate() {
-            if (!_attached) return;
+            if (!_attached) { return; }
             var newBuffer = _getBuffer();
-            if (newBuffer != _bufferPercent) {
+            if (newBuffer !== _bufferPercent) {
                 _bufferPercent = newBuffer;
                 _sendEvent(events.JWPLAYER_MEDIA_BUFFER, {
                     bufferPercent: Math.round(_bufferPercent * 100)
@@ -506,11 +524,13 @@
 
         function _endedHandler(evt) {
             _generalHandler(evt);
-            if (_attached) _complete();
+            if (_attached) {
+                _complete();
+            }
         }
 
         function _complete() {
-            if (_state != states.IDLE) {
+            if (_state !== states.IDLE) {
                 _currentQuality = -1;
                 _beforecompleted = TRUE;
                 _sendEvent(events.JWPLAYER_MEDIA_BEFORECOMPLETE);
@@ -549,52 +569,27 @@
         }
 
         _this.addCaptions = function(tracks) {
+            /*jshint maxlen:125*/
             if (utils.isIOS() && _videotag.addTextTrack && !_tracksOnce) {
                 var TextTrackCue = window.TextTrackCue;
                 utils.foreach(tracks, function(index, elem) {
                     if (elem.data) {
                         _usedTrack = index;
-                        var track = _videotag.addTextTrack(elem.kind, elem.label); //findTrack(elem.kind,elem.label);
+                        var track = _videotag.addTextTrack(elem.kind, elem.label);
                         utils.foreach(elem.data, function(ndx, element) {
-                            if (ndx % 2 == 1) {
-                                track.addCue(new TextTrackCue(element.begin, elem.data[parseInt(ndx) + 1].begin, element.text));
+                            if (ndx % 2 === 1) {
+                                var c = new TextTrackCue(element.begin, elem.data[parseInt(ndx,10) + 1].begin, element.text);
+                                track.addCue(c);
                             }
                         });
                         _tracks.push(track);
-                        track.mode = "hidden";
+                        track.mode = 'hidden';
                     }
                 });
             }
         };
 
-        // function findTrack(kind, label) {
-        //     for (var i = 0; i < _videotag.textTracks.length; i++) {
-        //       if(_videotag.textTracks[i].label === label) {
-        //           _usedTrack = i;
-        //           return _videotag.textTracks[i];
-        //         }
-        //     }
-        //     var track = _videotag.addTextTrack(kind,label);
-        //     _usedTrack = _videotag.textTracks.length - 1;
-        //     return track;
-        // }
-
         _this.resetCaptions = function() {
-            /*
-			if (_tracks.length > 0) {
-				_tracksOnce = true;
-			}
-			_tracks = [];
-			
-			for (var i = 0; i < _videotag.textTracks.length; i++) {
-
-
-			   while( _videotag.textTracks[i].cues && _videotag.textTracks[i].cues.length && _videotag.textTracks[i].cues.length > 0) {
-				   _videotag.textTracks[i].removeCue(_videotag.textTracks[i].cues[0]);
-			   }
-			   
-			  //_videotag.textTracks[i].mode = "disabled";
-			}*/
         };
 
 
@@ -603,19 +598,14 @@
                 var ret = null;
 
                 utils.foreach(_tracks, function(index, elem) {
-                    if (!state && elem.mode == "showing") {
-                        ret = parseInt(index);
+                    if (!state && elem.mode === 'showing') {
+                        ret = parseInt(index,10);
                     }
-                    if (!state)
-                        elem.mode = "hidden";
+                    if (!state) {
+                        elem.mode = 'hidden';
+                    }
                 });
-                /*if (state && _tracks[0]) {
-					_videotag.textTracks[0].mode = "showing";
-					_videotag.textTracks[0].mode = "hidden";
-					if (curr > 0) {
-						_tracks[curr-1].mode = "showing";
-					}
-				}*/
+
                 if (!state) {
                     return ret;
                 }
@@ -662,7 +652,7 @@
         _this.remove = function() {
             // stop video silently
             if (_videotag) {
-                _videotag.removeAttribute("src");
+                _videotag.removeAttribute('src');
                 if (!_isIE) {
                     _videotag.load();
                 }
@@ -749,16 +739,18 @@
                 return FALSE;
             }
             var type = _levels[0].type;
-            return (type == "oga" || type == "aac" || type == "mp3" || type == "vorbis");
+            return (type === 'oga' || type === 'aac' || type === 'mp3' || type === 'vorbis');
         };
 
         _this.setCurrentQuality = function(quality) {
-            if (_currentQuality == quality) return;
+            if (_currentQuality === quality) {
+                return;
+            }
             quality = parseInt(quality, 10);
             if (quality >= 0) {
                 if (_levels && _levels.length > quality) {
                     _currentQuality = quality;
-                    utils.saveCookie("qualityLabel", _levels[quality].label);
+                    utils.saveCookie('qualityLabel', _levels[quality].label);
                     _sendEvent(events.JWPLAYER_MEDIA_LEVEL_CHANGED, {
                         currentQuality: quality,
                         levels: _getPublicLevels(_levels)
@@ -782,7 +774,6 @@
         };
 
         _init();
-
     };
 
 })(jwplayer);
