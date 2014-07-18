@@ -1,20 +1,25 @@
 (function(jwplayer) {
 
     var utils = jwplayer.utils,
+        _ = jwplayer._,
         events = jwplayer.events,
         states = events.state,
-        defaultProvider = jwplayer.html5.provider,
         _isIE = utils.isMSIE(),
         _isMobile = utils.isMobile(),
         _isSafari = utils.isSafari(),
         _isAndroid = utils.isAndroidNative(),
         _isIOS7 = utils.isIOS(7);
 
-    var VideoProvider = function(_videotag, _name) {
 
-        _name = _name || '';
+    function _setupListeners(eventsHash, videoTag) {
+        utils.foreach(eventsHash, function(evt, evtCallback) {
+            videoTag.addEventListener(evt, evtCallback, false);
+        });
+    }
 
-        var _this = utils.extend(this, new events.eventdispatcher(_name)),
+    var VideoProvider = function(_playerId) {
+
+        var _this = utils.extend(this, new jwplayer.events.eventdispatcher('provider.' + this.name)),
 
             _mediaEvents = {
                 abort: _generalHandler,
@@ -80,31 +85,25 @@
             _fullscreenState = null;
 
 
-        // Constructor
-        function _init() {
-            if (!_videotag) {
-                _videotag = document.createElement('video');
-            }
+        // Find video tag, or create it if it doesn't exist
+        var element = document.getElementById(_playerId);
+        var _videotag = element.querySelector('video');
+        _videotag = _videotag || document.createElement('video');
 
-            _setupListeners();
+        _setupListeners(_mediaEvents, _videotag);
 
-            // Workaround for a Safari bug where video disappears on switch to fullscreen
-            if (!_isIOS7) {
-                _videotag.controls = true;
-                _videotag.controls = false;
-            }
-
-            // Enable AirPlay
-            _videotag.setAttribute('x-webkit-airplay', 'allow');
-
-            _attached = true;
+        // Workaround for a Safari bug where video disappears on switch to fullscreen
+        if (!_isIOS7) {
+            _videotag.controls = true;
+            _videotag.controls = false;
         }
 
-        function _setupListeners() {
-            utils.foreach(_mediaEvents, function(evt, evtCallback) {
-                _videotag.addEventListener(evt, evtCallback, false);
-            });
-        }
+        // Enable AirPlay
+        _videotag.setAttribute('x-webkit-airplay', 'allow');
+
+        _attached = true;
+
+
 
         function _sendEvent(type, data) {
             if (_attached) {
@@ -112,9 +111,10 @@
             }
         }
 
-
-        function _generalHandler() { //evt) {
-            //if (evt) utils.log('%s %o (%s,%s)', evt.type, evt);
+        function _generalHandler() {
+            //if (evt) {
+            //    utils.log('%s %o (%s,%s)', evt.type, evt);
+            //}
         }
 
         function _durationUpdateHandler(evt) {
@@ -125,7 +125,7 @@
                 _duration = newDuration;
             }
             if (_isAndroid && _delayedSeek > 0 && newDuration > _delayedSeek) {
-                _seek(_delayedSeek);
+                _this.seek(_delayedSeek);
             }
             _timeUpdateHandler();
         }
@@ -190,13 +190,12 @@
                 if (_isIE) {
                     setTimeout(function() {
                         if (_delayedSeek > 0) {
-                            _seek(_delayedSeek);
+                            _this.seek(_delayedSeek);
                         }
                     }, 200);
-                }
-                // Otherwise call it immediately
-                else {
-                    _seek(_delayedSeek);
+                } else {
+                    // Otherwise call it immediately
+                    _this.seek(_delayedSeek);
                 }
             }
         }
@@ -219,7 +218,7 @@
                     // Needed as of Chrome 20
                     //_complete();
                 } else {
-                    _pause();
+                    _this.pause();
                 }
             } else {
                 if (utils.isFF() && evt.type === 'play' && _state === states.BUFFERING) {
@@ -228,7 +227,6 @@
                     return;
                 } else {
                     _setState(states.PLAYING);
-
                 }
             }
         }
@@ -287,18 +285,6 @@
             return 0;
         }
 
-        this.load = function(item) {
-            if (!_attached) {
-                return;
-            }
-
-            _levels = item.sources;
-            _pickInitialQuality();
-            _sendLevels(_levels);
-
-            _completeLoad(item.starttime || 0, item.duration);
-        };
-
         function _pickInitialQuality() {
             if (_currentQuality < 0) {
                 _currentQuality = 0;
@@ -345,7 +331,7 @@
                 if (startTime === 0) {
                     // restart video without dispatching seek event
                     _delayedSeek = -1;
-                    _seek(startTime);
+                    _this.seek(startTime);
                 }
                 // meta event is usually triggered by load, and is needed for googima to work on replay
                 sendMetaEvent();
@@ -365,7 +351,7 @@
             }
 
             if (startTime > 0) {
-                _seek(startTime);
+                _this.seek(startTime);
             }
         }
 
@@ -385,13 +371,25 @@
             clearInterval(_bufferInterval);
         };
 
+        this.load = function(item) {
+            if (!_attached) {
+                return;
+            }
+
+            _levels = item.sources;
+            _pickInitialQuality();
+            _sendLevels(_levels);
+
+            _completeLoad(item.starttime || 0, item.duration);
+        };
+
         this.play = function() {
             if (_attached && !_dragging) {
                 _videotag.play();
             }
         };
 
-        var _pause = this.pause = function() {
+        this.pause = function() {
             if (_attached) {
                 _videotag.pause();
                 _setState(states.PAUSED);
@@ -410,7 +408,7 @@
             }
         };
 
-        var _seek = this.seek = function(seekPos) {
+        this.seek = function(seekPos) {
             if (!_attached) {
                 return;
             }
@@ -444,7 +442,7 @@
             }
         }
 
-        var _volume = this.volume = function(vol) {
+        this.volume = function(vol) {
             if (utils.exists(vol)) {
                 _videotag.volume = Math.min(Math.max(0, vol / 100), 1);
                 _lastVolume = _videotag.volume * 100;
@@ -467,7 +465,7 @@
                 _lastVolume = _videotag.volume * 100;
                 _videotag.muted = true;
             } else {
-                _volume(_lastVolume);
+                this.volume(_lastVolume);
                 _videotag.muted = false;
             }
         };
@@ -642,9 +640,7 @@
             _videotag.controls = !!state;
         };
 
-        this.supportsFullscreen = function() {
-            return true;
-        };
+        this.supportsFullscreen = _.constant(true);
 
         this.setFullScreen = function(state) {
             state = !!state;
@@ -720,11 +716,15 @@
             return _getPublicLevels(_levels);
         };
 
-        _init();
     };
 
-    VideoProvider.prototype = defaultProvider;
+    // Register provider
+    VideoProvider.name = 'html5';
+    VideoProvider.supports = _.constant(true);
+    jwplayer.html5.registerProvider(VideoProvider);
 
-    jwplayer.html5.Video = VideoProvider;
+    // make it public for use by instream.js
+    jwplayer.html5.VideoProvider = VideoProvider;
+
 
 })(jwplayer);

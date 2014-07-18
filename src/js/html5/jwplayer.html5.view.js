@@ -959,7 +959,7 @@
             }
 
             // debug this, find out why
-            if (_isMobile || _model.fullscreen) {
+            if (!(_isMobile && _model.fullscreen)) {
                 _model.getVideo().setControls(FALSE);
             }
         }

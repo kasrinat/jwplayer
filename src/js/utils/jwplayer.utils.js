@@ -772,5 +772,6 @@
     };
 
     utils.indexOf = _.indexOf;
+    utils.noop = function() {};
 
 })(jwplayer);

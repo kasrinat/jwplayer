@@ -9,14 +9,10 @@
         utils = jwplayer.utils,
         events = jwplayer.events;
 
-    html5.model = function(config, _defaultProvider) {
+    html5.model = function(config, defaultProvider) {
         var _model = this,
             // Video provider
             _video,
-            // Providers
-            _providers = {
-                html5: _defaultProvider || new html5.Video(null, 'default')
-            },
             // Saved settings
             _cookies = utils.getCookies(),
             // Sub-component configurations
@@ -24,6 +20,7 @@
                 controlbar: {},
                 display: {}
             },
+            _currentProvider,
             // Defaults
             _defaults = {
                 autostart: false,
@@ -96,10 +93,11 @@
             }
         }
 
-        _model.setVideoProvider = function(video) {
+
+        _model.setVideoProvider = function(provider) {
 
             // Only update on a change to provider
-            if (video === _video) {
+            if (provider === _video) {
                 return;
             }
 
@@ -108,11 +106,11 @@
                 var container = _video.getContainer();
                 if (container) {
                     _video.remove();
-                    video.setContainer(container);
+                    provider.setContainer(container);
                 }
             }
 
-            _video = video;
+            _video = provider;
             _video.volume(_model.volume);
             _video.mute(_model.mute);
             _video.addGlobalListener(_videoEventHandler);
@@ -178,27 +176,18 @@
                     index: _model.item
                 });
 
-                var item = _model.playlist[newItem];
-
                 // select provider based on item source (video, youtube...)
-                var provider = _providers.html5;
-                if (_model.playlist.length) {
-                    var source = item.sources[0];
-                    if (source.type === 'youtube' || utils.isYouTube(source.file)) {
-                        provider = _providers.youtube;
-                        if (provider !== _video) {
-                            // when switching providers always reinstantiate youtube
-                            if (provider) {
-                                provider.destroy();
-                            }
-                            provider = _providers.youtube = new html5.Youtube(_model.id);
-                        }
-                    }
-                }
-                _model.setVideoProvider(provider);
+                var item = _model.playlist[newItem];
+                var source = item && item.sources && item.sources[0];
+                var Provider = html5.chooseProvider(source);
+
+                 _currentProvider = defaultProvider || new Provider(_model.id);
+
+                _model.setVideoProvider(_currentProvider);
+
                 // this allows the provider to load preview images (youtube player data)
-                if (provider.init) {
-                    provider.init(item);
+                if (_currentProvider.init) {
+                    _currentProvider.init(item);
                 }
             }
         };

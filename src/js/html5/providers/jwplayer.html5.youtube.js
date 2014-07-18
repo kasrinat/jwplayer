@@ -2,7 +2,6 @@
 
     var utils = jwplayer.utils,
         events = jwplayer.events,
-        defaultProvider = jwplayer.html5.provider,
         states = events.state,
         _scriptLoader = new utils.scriptloader(window.location.protocol + '//www.youtube.com/iframe_api'),
         _isMobile = utils.isMobile(),
@@ -10,7 +9,7 @@
 
     var YoutubeProvider = function(_playerId) {
 
-        var _this = utils.extend(this, new events.eventdispatcher('html5.youtube')),
+        var _this = utils.extend(this, new jwplayer.events.eventdispatcher('provider.' + this.name)),
             // Youtube API and Player Instance
             _youtube = window.YT,
             _ytPlayer = null,
@@ -65,7 +64,7 @@
         }
 
         function _getVideoLayer() {
-            var videoLayer = _element.parentNode;
+            var videoLayer = _element && _element.parentNode;
             if (!videoLayer) {
                 // if jwplayer DOM is not ready, do Youtube embed on jwplayer ready
                 if (!_listeningForReady) {
@@ -331,23 +330,12 @@
                 }
             }
         }
-
-        function _cleanup() {
-            // stop video silently
-            _stopVideo();
-            // remove element
-            if (_element && _container && _container === _element.parentNode) {
-                _container.removeChild(_element);
-            }
-            _youtubeEmbedReadyCallback =
-                _youtubePlayerReadyCallback =
-                _ytPlayer = null;
-        }
-
-
         // Additional Provider Methods (not yet implemented in html5.video)
 
         this.init = function(item) {
+            // For now, we want each youtube provider to delete and start from scratch
+            //this.destroy();
+
             // load item on embed for mobile touch to start
             _setItem(item);
         };
@@ -359,6 +347,19 @@
                 _youtube =
                 _this = null;
         };
+
+        function _cleanup() {
+            // stop video silently
+            _stopVideo();
+            // remove element
+            if (_element && _container && _container === _element.parentNode) {
+                _container.removeChild(_element);
+            }
+            _youtubeEmbedReadyCallback =
+                _youtubePlayerReadyCallback =
+                    _ytPlayer = null;
+        }
+
 
         // Video Provider API
         this.load = function(item) {
@@ -485,6 +486,7 @@
         this.detachMedia = function() {
             // temp return a video element so instream doesn't break.
             // FOR VAST: prevent instream from being initialized while casting
+
             return document.createElement('video');
         };
 
@@ -603,8 +605,13 @@
         _scriptLoader = null;
     };
 
-    YoutubeProvider.prototype = defaultProvider;
+    function supports(source) {
+        return (source.type === 'youtube' || utils.isYouTube(source.file));
+    }
 
-    jwplayer.html5.Youtube = YoutubeProvider;
+    // Required configs
+    YoutubeProvider.name = 'youtube';
+    YoutubeProvider.supports = supports;
+    jwplayer.html5.registerProvider(YoutubeProvider);
 
 })(jwplayer);
