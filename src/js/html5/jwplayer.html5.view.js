@@ -38,7 +38,6 @@
          *************************************************************/
         TRUE = true,
         FALSE = !TRUE,
-        _canCast = FALSE,
         JW_CSS_SMOOTH_EASE = 'opacity .25s ease',
         JW_CSS_100PCT = '100%',
         JW_CSS_ABSOLUTE = 'absolute',
@@ -108,8 +107,6 @@
                 _playerElement.requestFullscreen ||
                 _playerElement.webkitRequestFullscreen ||
                 _playerElement.webkitRequestFullScreen ||
-                _playerElement.webkitEnterFullscreen ||
-                _playerElement.webkitEnterFullScreen ||
                 _playerElement.mozRequestFullScreen ||
                 _playerElement.msRequestFullscreen;
             _exitFullscreen =
@@ -125,7 +122,7 @@
                     display: 'inline-block'
                 });
                 _playerElement.className = _playerElement.className.replace(PLAYER_CLASS,
-                        PLAYER_CLASS + ' ' + ASPECT_MODE);
+                    PLAYER_CLASS + ' ' + ASPECT_MODE);
             }
 
             _resize(_model.width, _model.height);
@@ -291,7 +288,9 @@
 
 
         this.setup = function(skin) {
-            if (_errorState) { return; }
+            if (_errorState) {
+                return;
+            }
             _api.skin = skin;
 
             _container = _createElement('span', VIEW_MAIN_CONTAINER_CLASS);
@@ -352,10 +351,9 @@
             _api.jwAddEventListener(events.JWPLAYER_MEDIA_ERROR, _errorHandler);
             _api.jwAddEventListener(events.JWPLAYER_PLAYLIST_COMPLETE, _playlistCompleteHandler);
             _api.jwAddEventListener(events.JWPLAYER_PLAYLIST_ITEM, _playlistItemHandler);
-            _api.jwAddEventListener(events.JWPLAYER_CAST_AVAILABLE, function(evt) {
-                if (evt.available) {
+            _api.jwAddEventListener(events.JWPLAYER_CAST_AVAILABLE, function() {
+                if (utils.canCast()) {
                     _this.forceControls(TRUE);
-                    _canCast = TRUE;
                 } else {
                     _this.releaseControls();
                 }
@@ -475,7 +473,9 @@
 
         function _createElement(elem, className) {
             var newElement = DOCUMENT.createElement(elem);
-            if (className) { newElement.className = className; }
+            if (className) {
+                newElement.className = className;
+            }
             return newElement;
         }
 
@@ -545,7 +545,9 @@
                 forward(evt);
                 _touchHandler();
             });
-            if (_audioMode) { _display.hidePreview(TRUE); }
+            if (_audioMode) {
+                _display.hidePreview(TRUE);
+            }
             _controlsLayer.appendChild(_display.element());
 
             _logo = new html5.logo(_api, _logoConfig);
@@ -573,8 +575,12 @@
 
             _controlsLayer.appendChild(_controlbar.element());
 
-            if (_isIPod)  { _hideControlbar(); }
-            if (_canCast) { _this.forceControls(TRUE); }
+            if (_isIPod) {
+                _hideControlbar();
+            }
+            if (utils.canCast()) {
+                _this.forceControls(TRUE);
+            }
         }
 
         function _castAdChanged(evt) {
@@ -791,11 +797,15 @@
 
         function _resizeMedia(width, height) {
             if (!width || isNaN(Number(width))) {
-                if (!_videoLayer) { return; }
+                if (!_videoLayer) {
+                    return;
+                }
                 width = _videoLayer.clientWidth;
             }
             if (!height || isNaN(Number(height))) {
-                if (!_videoLayer) { return; }
+                if (!_videoLayer) {
+                    return;
+                }
                 height = _videoLayer.clientHeight;
             }
             var transformScale = _model.getVideo().resize(width, height, _model.stretching);
@@ -842,11 +852,6 @@
 
 
         function _fullscreenChangeHandler(event) {
-            // don't respond to fullscreen change handlers for elements outside the player (other players, etc...)
-            if (event.target !== _playerElement && !_playerElement.contains(event.target)) {
-                return;
-            }
-
             var fullscreenState = (event.jwstate !== undefined) ? event.jwstate : _isNativeFullscreen();
 
             if (_elementSupportsFullscreen) {
@@ -898,12 +903,9 @@
         }
 
         function _showControlbar() {
-            if (_isIPod && !_audioMode) {
-                return;
-            }
 
             if (_controlbar && _model.controls) {
-                if(_instreamMode) {
+                if (_instreamMode) {
                     _instreamControlbar.show();
                 } else {
                     _controlbar.show();
@@ -1002,10 +1004,8 @@
 
             _showing = TRUE;
             if (_model.controls || _audioMode) {
-                if (!(_isIPod && _currentState === states.PAUSED)) {
-                    _showControlbar();
-                    _showDock();
-                }
+                _showControlbar();
+                _showDock();
             }
             if (_logoConfig.hide) {
                 _showLogo();
@@ -1269,7 +1269,7 @@
             var dispBounds = _bounds(_container),
                 dispOffset = dispBounds.top,
                 cbBounds = _instreamMode ? _bounds(DOCUMENT.getElementById(_api.id + '_instream_controlbar')) :
-                    _bounds(_controlbar.element()),
+                _bounds(_controlbar.element()),
                 dockButtons = _instreamMode ? FALSE : (_dock.numButtons() > 0),
                 logoTop = (_logo.position().indexOf('top') === 0),
                 dockBounds,

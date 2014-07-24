@@ -82,8 +82,7 @@
             // post roll support
             _beforecompleted = false,
 
-            _fullscreenState = null;
-
+            _fullscreenState = false;
 
         // Find video tag, or create it if it doesn't exist
         var element = document.getElementById(_playerId);
@@ -673,8 +672,8 @@
             return state;
         };
 
-        this.getFullScreen = function() {
-            return _fullscreenState || _videotag.webkitDisplayingFullscreen;
+        _this.getFullScreen = function() {
+            return _fullscreenState || !!_videotag.webkitDisplayingFullscreen;
         };
 
         this.isAudioFile = function() {
